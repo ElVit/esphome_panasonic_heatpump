@@ -27,8 +27,8 @@ esphome:
   friendly_name: $device_name
   comment: $device_description
   includes:
-    - custom_components/heishamon/decode.h
-    - custom_components/heishamon/decode.cpp
+    - custom_components/panasonic/decode.h
+    - custom_components/panasonic/decode.cpp
 
 ota:
   platform: esphome
