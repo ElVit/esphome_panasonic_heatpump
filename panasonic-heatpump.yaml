@@ -84,8 +84,8 @@ uart:
               id(top2).publish_state(getBoolState(getBit1and2(bytes[4])));
               id(top3).publish_state(getBoolState(getBit1and2(bytes[7])));
               id(top4).publish_state(getTextState(OpModeDesc, getOpMode(bytes[6])));
-              //...
-              // (more topics see excel file)
+              // ...
+              // (for more topics see heishamon_decode.xlsx or code-gen-result.md)
             }
         - uart.write: # Write rx to tx.
             id: uart_cz
@@ -120,6 +120,8 @@ sensor:
     name: "Pump Flow"
     unit_of_measurement: l/min
     lambda: "return {};"
+  # ...
+  # (for more topics see heishamon_decode.xlsx or code-gen-result.md)
 
 text_sensor:
   - platform: version
@@ -134,6 +136,8 @@ text_sensor:
     id: top4
     name: "Operating Mode State"
     lambda: "return {};"
+  # ...
+  # (for more topics see heishamon_decode.xlsx or code-gen-result.md)
 
 binary_sensor:
   - platform: status
@@ -151,6 +155,8 @@ binary_sensor:
     id: top3
     name: "Quiet Mode Schedule"
     lambda: "return {};"
+  # ...
+  # (for more topics see heishamon_decode.xlsx or code-gen-result.md)
 
 button:
   - platform: restart
