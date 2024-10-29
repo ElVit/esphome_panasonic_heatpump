@@ -1,0 +1,157 @@
+substitutions:
+  mdns_name: panasonic-heatpump
+  device_name: Panasonic Heatpump
+  device_description: Reads/Controls your Panasonic Aquarea Heatpump over UART
+
+  #pin_status_led: GPIO8
+  pin_rx_hp: GPIO4  # heatpump reads data (RX) on this pin     (green)
+  pin_tx_hp: GPIO3  # heatpump sends data (TX) on this pin     (yellow)
+  pin_tx_cz: GPIO1  # WiFi module sends data (TX) on this pin  (blue)
+  pin_rx_cz: GPIO0  # WiFi module reads data (RX) on this pin  (white)
+
+  # CN-CNT Pinout (from top to bottom)
+  # 1 - +5V (250mA)
+  # 2 - 0-5V TX (from heatpump)
+  # 3 - 0-5V RX (to heatpump)
+  # 4 - +12V (250mA)
+  # 5 - GND
+
+esp32:
+  board: esp32-c3-devkitm-1
+  variant: ESP32C3
+  framework:
+    type: arduino
+
+esphome:
+  name: $mdns_name
+  friendly_name: $device_name
+  comment: $device_description
+  includes:
+    - custom_components/heishamon/decode.h
+    - custom_components/heishamon/decode.cpp
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+  id: ota_pass
+
+api:
+  encryption:
+    key: !secret ha_api_key
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name} Fallback"
+    password: !secret fallback_password
+
+web_server:
+  port: 80
+  auth:
+    username: !secret webserver_username
+    password: !secret webserver_password
+
+captive_portal:
+
+improv_serial:
+
+logger:
+  level: DEBUG
+
+uart:
+  - id: uart_hp
+    # switch rx and tx to read what the heatpump is sending
+    tx_pin: $pin_rx_hp
+    rx_pin: $pin_tx_hp
+    baud_rate: 9600
+    data_bits: 8
+    parity: EVEN
+    stop_bits: 1
+    debug:
+      direction: RX
+      dummy_receiver: true # needed if no uart component is available
+      after:
+        bytes: 203
+      sequence:
+        - lambda: |-
+            ESP_LOGD("custom", "Heatpump:");
+            UARTDebug::log_hex(direction, bytes, ',');
+            if (bytes.size() == 203)
+            {
+              id(top0).publish_state(getBoolState(getBit7and8(bytes[4])));
+              id(top1).publish_state(getPumpFlow(bytes[169], bytes[170]));
+              id(top2).publish_state(getBoolState(getBit1and2(bytes[4])));
+              id(top3).publish_state(getBoolState(getBit1and2(bytes[7])));
+              id(top4).publish_state(getTextState(OpModeDesc, getOpMode(bytes[6])));
+              //...
+              // (more topics see excel file)
+            }
+        - uart.write: # Write rx to tx.
+            id: uart_cz
+            data: !lambda return bytes;
+  - id: uart_cz
+    # switch rx and tx to read what the WiFi module is sending
+    tx_pin: $pin_rx_cz
+    rx_pin: $pin_tx_cz
+    baud_rate: 9600
+    data_bits: 8
+    parity: EVEN
+    stop_bits: 1
+    debug:
+      direction: RX
+      dummy_receiver: true # needed if no uart component is available
+      after:
+        bytes: 111
+      sequence:
+        - lambda: |-
+            ESP_LOGD("custom", "CZ-TAW1:");
+            UARTDebug::log_hex(direction, bytes, ',');
+        - uart.write: # Write rx to tx.
+            id: uart_hp
+            data: !lambda return bytes;
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+
+  - platform: template
+    id: top1
+    name: "Pump Flow"
+    unit_of_measurement: l/min
+    lambda: "return {};"
+
+text_sensor:
+  - platform: version
+    hide_timestamp: true
+    name: ESPHome Version
+  - platform: wifi_info
+    ip_address:
+      name: IP Addresse
+      icon: mdi:ip
+
+  - platform: template
+    id: top4
+    name: "Operating Mode State"
+    lambda: "return {};"
+
+binary_sensor:
+  - platform: status
+    name: Status
+
+  - platform: template
+    id: top0
+    name: "Heatpump State"
+    lambda: "return {};"
+  - platform: template
+    id: top2
+    name: "Force DHW State"
+    lambda: "return {};"
+  - platform: template
+    id: top3
+    name: "Quiet Mode Schedule"
+    lambda: "return {};"
+
+button:
+  - platform: restart
+    name: Restart
