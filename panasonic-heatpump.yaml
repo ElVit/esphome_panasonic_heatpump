@@ -3,7 +3,6 @@ substitutions:
   device_name: Panasonic Heatpump
   device_description: Reads/Controls your Panasonic Aquarea Heatpump over UART
 
-  #pin_status_led: GPIO8
   pin_rx_hp: GPIO4  # heatpump reads data (RX) on this pin     (green)
   pin_tx_hp: GPIO3  # heatpump sends data (TX) on this pin     (yellow)
   pin_tx_cz: GPIO1  # WiFi module sends data (TX) on this pin  (blue)
