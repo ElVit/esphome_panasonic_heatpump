@@ -11,8 +11,6 @@
 #define NUMBER_OF_OPT_TOPICS 7
 #define MAX_TOPIC_LEN 42
 
-
-
 int getBit1(uint8_t input);
 int getBit1and2(uint8_t input);
 int getBit3and4(uint8_t input);
